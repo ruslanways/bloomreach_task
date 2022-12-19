@@ -41,7 +41,7 @@ df = df.astype(str)
 
 # Send data from DataFrame to BigQuery table by chunks of 20 lines.
 df.to_gbq(
-    "dataset1.table1",
+    "Ruslan_Mansurov_coding_exercise.bloomreach_task",
     "wisdom-dev-340814",
     if_exists="replace",
     chunksize=20,

@@ -44,8 +44,8 @@ credentials_gcp = service_account.Credentials.from_service_account_file(
 
 # Send data from DataFrame to BigQuery table by chunks of 20 lines.
 df.to_gbq(
-    "dataset1.table1",
-    "refined-analogy-371811",
+    "Ruslan_Mansurov_coding_exercise.bloomreach_task",
+    "wisdom-dev-340814",
     if_exists="replace",
     chunksize=20,
     credentials=credentials_gcp,

@@ -9,7 +9,7 @@ terraform {
 
 provider "google" {
     project = "wisdom-dev-340814"
-    credentials = "${file("credentials_gcp.json")}"
+    credentials = "${file("./credentials_gcp.json")}"
 }
 
 resource "google_bigquery_dataset" "bq_ds" {
@@ -22,8 +22,76 @@ resource "google_bigquery_table" "table_tf" {
     depends_on = [google_bigquery_dataset.bq_ds]
 }
 
+locals {
+  project = "wisdom-dev-340814"
+}
 
-# Push docker image to Google Artifact Registry (can use GitHub Actions)
-# Create service on Google Cloud Run 
-# that run docker image triggered by link (HTTP-request)
-# that in turn invoke my Python functions (ETL jobs)
+resource "google_storage_bucket" "bucket" {
+  name = "${local.project}-gcf-source1"
+  location = "EU"
+  uniform_bucket_level_access = true
+}
+
+resource "google_storage_bucket_object" "object1" {
+  name   = "function1-source.zip"
+  bucket = google_storage_bucket.bucket.name
+  source = "./task1/task1-source.zip"
+}
+
+resource "google_storage_bucket_object" "object2" {
+  name   = "function2-source.zip"
+  bucket = google_storage_bucket.bucket.name
+  source = "./task2/task2-source.zip"
+}
+
+resource "google_cloudfunctions2_function" "function1" {
+  name = "function-task1"
+  description = "a new function of task_1"
+
+  build_config {
+    runtime = "python310"
+    entry_point = "task_1"
+    source {
+      storage_source {
+        bucket = google_storage_bucket.bucket.name
+        object = google_storage_bucket_object.object1.name
+      }
+    }
+  }
+
+  service_config {
+    max_instance_count  = 1
+    available_memory    = "256M"
+    timeout_seconds     = 60
+  }
+}
+
+resource "google_cloudfunctions2_function" "function2" {
+  name = "function-task2"
+  description = "a new function of task_2"
+
+  build_config {
+    runtime = "python310"
+    entry_point = "task_2"
+    source {
+      storage_source {
+        bucket = google_storage_bucket.bucket.name
+        object = google_storage_bucket_object.object2.name
+      }
+    }
+  }
+
+  service_config {
+    max_instance_count  = 1
+    available_memory    = "256M"
+    timeout_seconds     = 60
+  }
+}
+
+
+output "function1_uri" { 
+  value = google_cloudfunctions2_function.function1.service_config[0].uri
+}
+output "function2_uri" { 
+  value = google_cloudfunctions2_function.function2.service_config[0].uri
+}

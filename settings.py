@@ -1,0 +1,6 @@
+USER = "po5sj576o13t3n9m72fhc2d5r0fzd1l4c9w2kggkd11lkisqlvfan8016n1g1dvk"
+PWD = "pgpn186dbc7gpzl8gj1g0aiflu5cj6hu7xy0lnejfc4invuwu92tt3316w5kupgo"
+CREDENTIALS_GCP_JSON_FILE = "credentials_gcp.json"
+PROJECT_ID = "wisdom-dev-340814"
+DATASET_ID = "Ruslan_Mansurov_coding_exercise"
+TABLE_ID = "bloomreach_task"

@@ -4,6 +4,14 @@ import pandas as pd
 from google.oauth2 import service_account
 from pathlib import Path
 import functions_framework
+from .settings import (
+    USER,
+    PWD,
+    CREDENTIALS_GCP_JSON_FILE,
+    PROJECT_ID,
+    DATASET_ID,
+    TABLE_ID,
+)
 
 
 """Write a script in python which exports all customers in chunks of MAXIMUM 20
@@ -14,18 +22,12 @@ Use supplied system account credentials when authenticating with GCP APIs in
 both cases.
 """
 
-USER = "po5sj576o13t3n9m72fhc2d5r0fzd1l4c9w2kggkd11lkisqlvfan8016n1g1dvk"
-PWD = "pgpn186dbc7gpzl8gj1g0aiflu5cj6hu7xy0lnejfc4invuwu92tt3316w5kupgo"
-CREDENTIALS_GCP_JSON_FILE = "credentials_gcp.json"
-PROJECT_ID = "wisdom-dev-340814"
-DATASET_ID = "Ruslan_Mansurov_coding_exercise"
-TABLE_ID = "bloomreach_task"
-
 
 @functions_framework.http
 def taks_1(request):
     main(USER, PWD, CREDENTIALS_GCP_JSON_FILE, PROJECT_ID, DATASET_ID, TABLE_ID)
     return "THe data was successfully sent to BigQuery"
+
 
 def main(user, pwd, credentials, project, dataset, table):
     """Get data from Bloomreach Engagement api
@@ -33,6 +35,7 @@ def main(user, pwd, credentials, project, dataset, table):
     """
     df = read_from_bloomreach(user, pwd)
     send_to_bigquery(df, credentials, project, dataset, table)
+
 
 def read_from_bloomreach(user, pwd):
     """Make a HTTP-request to get the data
@@ -55,6 +58,7 @@ def read_from_bloomreach(user, pwd):
 
     # Create pandas DataFrame from the dict.
     return pd.DataFrame(data=response_dict["rows"], columns=response_dict["header"])
+
 
 def send_to_bigquery(df, credentials, project, dataset, table):
     """Connect to BigQuery

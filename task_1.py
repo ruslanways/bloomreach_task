@@ -3,6 +3,7 @@ import requests
 import pandas as pd
 from google.oauth2 import service_account
 from pathlib import Path
+import functions_framework
 
 
 """Write a script in python which exports all customers in chunks of MAXIMUM 20
@@ -21,13 +22,17 @@ DATASET_ID = "Ruslan_Mansurov_coding_exercise"
 TABLE_ID = "bloomreach_task"
 
 
+@functions_framework.http
+def taks_1(request):
+    main(USER, PWD, CREDENTIALS_GCP_JSON_FILE, PROJECT_ID, DATASET_ID, TABLE_ID)
+    return "THe data was successfully sent to BigQuery"
+
 def main(user, pwd, credentials, project, dataset, table):
     """Get data from Bloomreach Engagement api
     and send it to BigQuery.
     """
     df = read_from_bloomreach(user, pwd)
-    send_to_bogquery(df, credentials, project, dataset, table)
-
+    send_to_bigquery(df, credentials, project, dataset, table)
 
 def read_from_bloomreach(user, pwd):
     """Make a HTTP-request to get the data
@@ -51,20 +56,16 @@ def read_from_bloomreach(user, pwd):
     # Create pandas DataFrame from the dict.
     return pd.DataFrame(data=response_dict["rows"], columns=response_dict["header"])
 
-
-def send_to_bogquery(df, credentials, project, dataset, table):
+def send_to_bigquery(df, credentials, project, dataset, table):
     """Connect to BigQuery
     and send the data to it.
     """
-
     # Cast all columns of DataFrame to string data types for exporting to BigQuery.
     df = df.astype(str)
-
     # Get authentication credentials for BigQuery connection.
     credentials_gcp = service_account.Credentials.from_service_account_file(
         Path(__file__).resolve().parent / credentials,
     )
-
     # Send data from DataFrame to BigQuery table by chunks of 20 lines.
     df.to_gbq(
         f"{dataset}.{table}",
@@ -74,9 +75,6 @@ def send_to_bogquery(df, credentials, project, dataset, table):
         credentials=credentials_gcp,
     )
 
-
-if __name__ == "__main__":
-    main(USER, PWD, CREDENTIALS_GCP_JSON_FILE, PROJECT_ID, DATASET_ID, TABLE_ID)
 
 # # # # #
 # Sending data to BigQuery in chunks method 2.

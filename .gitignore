@@ -1,5 +1,7 @@
 .env
 credentials_gcp.json
+task_description/create_json.py
+task_description/Ruslan_code.docx
 __pycache__/
 *.py[cod]
 *$py.class

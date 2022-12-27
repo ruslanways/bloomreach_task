@@ -7,6 +7,13 @@ import os
 from dotenv import load_dotenv
 
 
+"""Your colleague finds out that the parameter 'number of employees' in the data set
+is not up-to-date. The requirement is to increase 'number of employees' by 20% for all
+companies in the dataset. Write a script in python which updates 'number of
+employees' accordingly, and upserts the data to bigquery only for companies with
+non-null number of employees.
+"""
+
 # Use .env file to load environmental variables which contain credentials for bloomreach engagement API.
 load_dotenv()
 
@@ -14,14 +21,6 @@ PROJECT_ID = os.environ.get('PROJECT_ID')
 DATASET_ID = os.environ.get('DATASET_ID')
 TABLE_ID = os.environ.get('TABLE_ID')
 CREDENTIALS_GCP_JSON_FILE = Path(__file__).resolve().parent / "credentials_gcp.json"
-
-
-"""Your colleague finds out that the parameter 'number of employees' in the data set
-is not up-to-date. The requirement is to increase 'number of employees' by 20% for all
-companies in the dataset. Write a script in python which updates 'number of
-employees' accordingly, and upserts the data to bigquery only for companies with
-non-null number of employees.
-"""
 
 
 @functions_framework.http

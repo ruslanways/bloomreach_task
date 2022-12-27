@@ -4,14 +4,8 @@ import pandas as pd
 from google.oauth2 import service_account
 from pathlib import Path
 import functions_framework
-from .settings import (
-    USER,
-    PWD,
-    CREDENTIALS_GCP_JSON_FILE,
-    PROJECT_ID,
-    DATASET_ID,
-    TABLE_ID,
-)
+import os
+from dotenv import load_dotenv
 
 
 """Write a script in python which exports all customers in chunks of MAXIMUM 20
@@ -21,6 +15,16 @@ name>>_coding_exercise. For creating infrastructure in GCP, please use terraform
 Use supplied system account credentials when authenticating with GCP APIs in
 both cases.
 """
+
+# Use .env file to load environmental variables which contain credentials for bloomreach engagement API.
+load_dotenv()
+
+USER = os.environ.get('USER')
+PWD = os.environ.get('PWD')
+PROJECT_ID = os.environ.get('PROJECT_ID')
+DATASET_ID = os.environ.get('DATASET_ID')
+TABLE_ID = os.environ.get('TABLE_ID')
+CREDENTIALS_GCP_JSON_FILE = Path(__file__).resolve().parent / "credentials_gcp.json"
 
 
 @functions_framework.http
@@ -68,7 +72,7 @@ def send_to_bigquery(df, credentials, project, dataset, table):
     df = df.astype(str)
     # Get authentication credentials for BigQuery connection.
     credentials_gcp = service_account.Credentials.from_service_account_file(
-        Path(__file__).resolve().parent / credentials,
+        credentials,
     )
     # Send data from DataFrame to BigQuery table by chunks of 20 lines.
     df.to_gbq(

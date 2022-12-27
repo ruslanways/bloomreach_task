@@ -3,7 +3,8 @@ import pandas_gbq
 from google.oauth2 import service_account
 from pathlib import Path
 import functions_framework
-from .settings import CREDENTIALS_GCP_JSON_FILE, PROJECT_ID, DATASET_ID, TABLE_ID
+import os
+from dotenv import load_dotenv
 
 
 """Your colleague finds out that the parameter 'number of employees' in the data set
@@ -12,6 +13,14 @@ companies in the dataset. Write a script in python which updates 'number of
 employees' accordingly, and upserts the data to bigquery only for companies with
 non-null number of employees.
 """
+
+# Use .env file to load environmental variables which contain credentials for bloomreach engagement API.
+load_dotenv()
+
+PROJECT_ID = os.environ.get('PROJECT_ID')
+DATASET_ID = os.environ.get('DATASET_ID')
+TABLE_ID = os.environ.get('TABLE_ID')
+CREDENTIALS_GCP_JSON_FILE = Path(__file__).resolve().parent / "credentials_gcp.json"
 
 
 @functions_framework.http
@@ -26,7 +35,7 @@ def main(credentials, project, dataset, table):
     """
     # Get authentication credentials for BigQuery connection.
     credentials_gcp = service_account.Credentials.from_service_account_file(
-        Path(__file__).resolve().parent / credentials,
+        credentials,
     )
     df = read_from_bigquery(credentials_gcp, project, dataset, table)
     update_data(df)

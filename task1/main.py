@@ -8,6 +8,14 @@ import os
 from dotenv import load_dotenv
 
 
+"""Write a script in python which exports all customers in chunks of MAXIMUM 20
+lines per insert from the above mentioned Bloomreach Engagement project to a
+GCP bigquery table under dataset <<your first name>>_<<your last
+name>>_coding_exercise. For creating infrastructure in GCP, please use terraform.
+Use supplied system account credentials when authenticating with GCP APIs in
+both cases.
+"""
+
 # Use .env file to load environmental variables which contain credentials for bloomreach engagement API.
 load_dotenv()
 
@@ -17,15 +25,6 @@ PROJECT_ID = os.environ.get('PROJECT_ID')
 DATASET_ID = os.environ.get('DATASET_ID')
 TABLE_ID = os.environ.get('TABLE_ID')
 CREDENTIALS_GCP_JSON_FILE = Path(__file__).resolve().parent / "credentials_gcp.json"
-
-
-"""Write a script in python which exports all customers in chunks of MAXIMUM 20
-lines per insert from the above mentioned Bloomreach Engagement project to a
-GCP bigquery table under dataset <<your first name>>_<<your last
-name>>_coding_exercise. For creating infrastructure in GCP, please use terraform.
-Use supplied system account credentials when authenticating with GCP APIs in
-both cases.
-"""
 
 
 @functions_framework.http

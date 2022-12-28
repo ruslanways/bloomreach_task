@@ -7,9 +7,13 @@ terraform {
   }
 }
 
+locals {
+  project = "wisdom-dev-340814"
+}
+
 provider "google" {
-    project = "wisdom-dev-340814"
-    credentials = "${file("./credentials_gcp.json")}"
+    project = local.project
+    credentials = file("./credentials_gcp.json")
 }
 
 resource "google_bigquery_dataset" "bq_ds" {
@@ -20,10 +24,6 @@ resource "google_bigquery_table" "table_tf" {
     table_id = "bloomreach_task"
     dataset_id = google_bigquery_dataset.bq_ds.dataset_id
     depends_on = [google_bigquery_dataset.bq_ds]
-}
-
-locals {
-  project = "wisdom-dev-340814"
 }
 
 resource "google_storage_bucket" "bucket" {

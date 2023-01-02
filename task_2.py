@@ -20,8 +20,7 @@ load_dotenv()
 PROJECT_ID = os.environ.get('PROJECT_ID')
 DATASET_ID = os.environ.get('DATASET_ID')
 TABLE_ID = os.environ.get('TABLE_ID')
-CREDENTIALS_GCP_JSON_FILE = Path(__file__).resolve().parent / "credentials_gcp.json"
-
+CREDENTIALS_GCP_JSON_FILE = str(Path(__file__).resolve().parent / "credentials_gcp.json")
 
 @functions_framework.http
 def taks_2(request):

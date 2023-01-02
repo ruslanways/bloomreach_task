@@ -24,7 +24,7 @@ PWD = os.environ.get('PWD')
 PROJECT_ID = os.environ.get('PROJECT_ID')
 DATASET_ID = os.environ.get('DATASET_ID')
 TABLE_ID = os.environ.get('TABLE_ID')
-CREDENTIALS_GCP_JSON_FILE = str(Path(__file__).resolve().parent / "credentials_gcp.json")
+CREDENTIALS_GCP_JSON_FILE = Path(__file__).resolve().parent / "credentials_gcp.json"
 
 
 @functions_framework.http
@@ -72,7 +72,7 @@ def send_to_bigquery(df, credentials, project, dataset, table):
     df = df.astype(str)
     # Get authentication credentials for BigQuery connection.
     credentials_gcp = service_account.Credentials.from_service_account_file(
-        credentials
+        credentials,
     )
     # Send data from DataFrame to BigQuery table by chunks of 20 lines.
     df.to_gbq(

@@ -1,11 +1,13 @@
 import base64
 import requests
-import pandas as pd
-from google.oauth2 import service_account
 from pathlib import Path
-import functions_framework
 import os
+import ndjson
 from dotenv import load_dotenv
+from google.oauth2 import service_account
+from google.cloud import bigquery
+import functions_framework
+
 
 
 """Write a script in python which exports all customers in chunks of MAXIMUM 20
@@ -30,15 +32,15 @@ CREDENTIALS_GCP_JSON_FILE = Path(__file__).resolve().parent / "credentials_gcp.j
 @functions_framework.http
 def taks_1(request):
     main(USER, PWD, CREDENTIALS_GCP_JSON_FILE, PROJECT_ID, DATASET_ID, TABLE_ID)
-    return "THe data was successfully sent to BigQuery"
+    return "The data was successfully sent to BigQuery"
 
 
 def main(user, pwd, credentials, project, dataset, table):
     """Get data from Bloomreach Engagement api
     and send it to BigQuery.
     """
-    df = read_from_bloomreach(user, pwd)
-    send_to_bigquery(df, credentials, project, dataset, table)
+    data = read_from_bloomreach(user, pwd)
+    send_to_bigquery(data, credentials, project, dataset, table)
 
 
 def read_from_bloomreach(user, pwd):
@@ -58,43 +60,47 @@ def read_from_bloomreach(user, pwd):
         "authorization": f"Basic {credentials_base64_str}",
     }
     response = requests.post(url, json=payload, headers=headers)
-    response_dict = response.json()  # Get python dict from response json.
-
-    # Create pandas DataFrame from the dict.
-    return pd.DataFrame(data=response_dict["rows"], columns=response_dict["header"])
+    return response.json()  # Get python dict from response json.
 
 
-def send_to_bigquery(df, credentials, project, dataset, table):
+def send_to_bigquery(data, credentials, project, dataset, table):
     """Connect to BigQuery
     and send the data to it.
     """
-    # Cast all columns of DataFrame to string data types for exporting to BigQuery.
-    df = df.astype(str)
     # Get authentication credentials for BigQuery connection.
     credentials_gcp = service_account.Credentials.from_service_account_file(
         credentials,
+        scopes=["https://www.googleapis.com/auth/cloud-platform"],
     )
-    # Send data from DataFrame to BigQuery table by chunks of 20 lines.
-    df.to_gbq(
-        f"{dataset}.{table}",
-        f"{project}",
-        if_exists="replace",
-        chunksize=20,
+    # Create connection to BigQuery
+    client = bigquery.Client(
         credentials=credentials_gcp,
+        project=project,
     )
-
-
-# # # # #
-# Sending data to BigQuery in chunks method 2.
-#
-# step = 20
-# start = 0
-# stop = step
-
-# while True:
-#    chunk_df = df[start:stop]
-#    if chunk_df.empty:
-#       break
-#    df.to_gbq('dataset1.table1', 'refined-analogy-371811', if_exists='replace')
-#    start += step
-#    stop += step
+    
+    # Tranform received data to conrofm json for sending to BigQuery.
+    def shape_json_gen(data):
+        """
+        Created new json with right schema to ingest to BigQuery.
+        Make it in form of generator to economy memory.
+        The generator will returns data by 20 lines per iteration.
+        """
+        adapted_data = []
+        tmp = {}
+        for row in data["rows"]:
+            for count, entry in enumerate(row):
+                tmp[data["header"][count]] = entry      
+                adapted_data.append(tmp)
+                if len(adapted_data) == 20:
+                    yield adapted_data
+                    adapted_data.clear()
+        yield adapted_data 
+    
+    # Configuring the loading job with schema and type of data.
+    job_config = bigquery.LoadJobConfig(
+        schema = [bigquery.SchemaField(header, "STRING") for header in data["header"]],
+        source_format = bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
+    )
+    # Invoke a job (loading data to DigQuery) by iterations of 20 lines.
+    for chunk in shape_json_gen(data):
+        client.load_table_from_json(ndjson.dumps(chunk), table, job_config=job_config).result()

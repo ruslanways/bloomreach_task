@@ -1,4 +1,5 @@
 import base64
+import copy
 import requests
 from pathlib import Path
 import os
@@ -7,7 +8,6 @@ from dotenv import load_dotenv
 from google.oauth2 import service_account
 from google.cloud import bigquery
 import functions_framework
-
 
 
 """Write a script in python which exports all customers in chunks of MAXIMUM 20
@@ -21,16 +21,16 @@ both cases.
 # Use .env file to load environmental variables which contain credentials for bloomreach engagement API.
 load_dotenv()
 
-USER = os.environ.get('USER')
-PWD = os.environ.get('PWD')
-PROJECT_ID = os.environ.get('PROJECT_ID')
-DATASET_ID = os.environ.get('DATASET_ID')
-TABLE_ID = os.environ.get('TABLE_ID')
+USER = os.environ.get("USER")
+PWD = os.environ.get("PWD")
+PROJECT_ID = os.environ.get("PROJECT_ID")
+DATASET_ID = os.environ.get("DATASET_ID")
+TABLE_ID = os.environ.get("TABLE_ID")
 CREDENTIALS_GCP_JSON_FILE = Path(__file__).resolve().parent / "credentials_gcp.json"
 
 
 @functions_framework.http
-def taks_1(request):
+def taks_1():
     main(USER, PWD, CREDENTIALS_GCP_JSON_FILE, PROJECT_ID, DATASET_ID, TABLE_ID)
     return "The data was successfully sent to BigQuery"
 
@@ -77,30 +77,35 @@ def send_to_bigquery(data, credentials, project, dataset, table):
         credentials=credentials_gcp,
         project=project,
     )
-    
+
     # Tranform received data to conrofm json for sending to BigQuery.
-    def shape_json_gen(data):
+    def reshape_json_gen(data):
         """
         Created new json with right schema to ingest to BigQuery.
-        Make it in form of generator to economy memory.
+        Make it in form of generator to save memory.
         The generator will returns data by 20 lines per iteration.
         """
         adapted_data = []
         tmp = {}
         for row in data["rows"]:
             for count, entry in enumerate(row):
-                tmp[data["header"][count]] = entry      
-                adapted_data.append(tmp)
-                if len(adapted_data) == 20:
-                    yield adapted_data
-                    adapted_data.clear()
-        yield adapted_data 
-    
+                tmp[data["header"][count]] = entry
+            adapted_data.append(copy.deepcopy(tmp))
+            if len(adapted_data) == 20:
+                yield adapted_data
+                adapted_data.clear()
+        yield adapted_data
+
     # Configuring the loading job with schema and type of data.
     job_config = bigquery.LoadJobConfig(
-        schema = [bigquery.SchemaField(header, "STRING") for header in data["header"]],
-        source_format = bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
+        schema=[bigquery.SchemaField(header, "STRING") for header in data["header"]],
+        source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
     )
+
     # Invoke a job (loading data to DigQuery) by iterations of 20 lines.
-    for chunk in shape_json_gen(data):
-        client.load_table_from_json(ndjson.dumps(chunk), table, job_config=job_config).result()
+    for chunk in reshape_json_gen(data):
+        client.load_table_from_json(
+            ndjson.loads(ndjson.dumps(chunk)),
+            f"{project}.{dataset}.{table}",
+            job_config=job_config,
+        ).result()
